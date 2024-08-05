@@ -1,0 +1,72 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CICD pipeline master with Maven
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+
+  deployStaging:
+
+    runs-on: [ self-hosted, staging ]
+    environment: Staging
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Move jar to the Program Directory
+        run: payment-processor-mover
+      - name: Deploy and Run Rest API
+        run: rest-api-mover
+
+  deployProd:
+
+    runs-on: [ self-hosted, prod ]
+    needs: deployStaging
+    environment: Prod
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+      - name: Move jar to the Program Directory
+        run: payment-processor-mover
+      - name: Deploy and Run Rest API
+        run: rest-api-mover
+
+  deployProdUS:
+
+    runs-on: [self-hosted, prod-us]
+    needs: deployStaging
+    environment: Prod-US
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+    - name: Move jar to the Program Directory
+      run: payment-processor-mover
+    - name: Deploy and Run Rest API
+      run: rest-api-mover
